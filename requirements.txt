@@ -1,5 +1,1 @@
-pathway[all]
-fastapi
-uvicorn
-python-dotenv
-pydantic
+app

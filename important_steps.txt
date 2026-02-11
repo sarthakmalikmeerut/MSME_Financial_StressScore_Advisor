@@ -1,4 +1,4 @@
-1. pip install requirements
+1. pip install -r requirements.txt
 2. pip install pathway
 3. run this in your main directory inside wsl: - export PYTHONPATH=$(pwd)
 run the main.py

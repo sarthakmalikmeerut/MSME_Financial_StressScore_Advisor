@@ -1,0 +1,16 @@
+.gitignore
+.venv
+
+
+app/__pycache__
+app/pipeline/__pycache__
+app/data/__pycache__
+app/streams/__pycache__
+app/schemas/__pycache__
+app/transforms/__pycache__
+app/features/__pycache__
+app/models/__pycache__
+app/pipeline/__pycache__
+app/__pycache__
+
+stdout

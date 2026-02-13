@@ -29,8 +29,17 @@ export PYTHONPATH=$(pwd)
 ### 5. Start the Program
 Run the main pipeline script from the root directory:
 ```bash
-python app/main.py
+python -m app.main
 ```
 
-### 6. Monitor Processing
-The application will begin streaming data from `./data/streams/`. You will see the processed results printed to the console as they occur.
+### 6. Monitor and See Live Changes
+To see the streaming pipeline in action:
+1. **Keep the program running** in your first terminal window. You will see the initial processing of existing data.
+2. **Open another terminal window** and navigate to same project directory.
+3. **Append new data** to the inflow stream. Use timestamps **later** than the original data (which ends at 10:02:00 on Feb 10) to trigger the output:
+   ```bash
+   # Add transactions for MSME A1 at 10:15 and 10:20
+   printf '\n4,A1,30000,2026-02-10T10:15:00' >> data/streams/inflow.csv
+   printf '\n5,A1,28000,2026-02-10T10:20:00' >> data/streams/inflow.csv
+   ```
+4. **Watch the first terminal:** You will now see JSON lines appearing for `A1`. Because we set the window to 5 minutes, adding a transaction at `10:15:00` forces the previous windows to calculate and print!

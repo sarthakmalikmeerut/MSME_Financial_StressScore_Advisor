@@ -4,13 +4,12 @@ from .schemas import InflowSchema, OutflowSchema, EMISchema, BalanceSchema
 def read_streams():
     # Helper to read and parse ts
     def read_and_parse(path, schema):
-        table = pw.demo.replay_csv(
+        table = pw.io.csv.read(
             path=path,
             schema=schema,
-            input_rate=1.0
+            mode="streaming"
         )
         # Parse ISO timestamp string to DateTimeNaive
-        # Using .dt.strptime if available, or a robust workaround
         return table.with_columns(ts=pw.this.ts.dt.strptime("%Y-%m-%dT%H:%M:%S"))
 
     inflow = read_and_parse("./data/streams/inflow.csv", InflowSchema)

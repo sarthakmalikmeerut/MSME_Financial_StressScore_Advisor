@@ -35,29 +35,29 @@ def build_features(inflow, outflow, emi, balance):
         ).reduce(msme_id=pw.reducers.any(pw.this.msme_id), inflow_7d_avg=pw.reducers.avg(pw.this.amount))
     )
 
-    # Join feature tables
+    # Join feature tables using outer join to catch MSMEs even if some data is missing
     feats = (
         inflow_24h
-          .join(outflow_24h, inflow_24h.msme_id == outflow_24h.msme_id)
+          .join_outer(outflow_24h, inflow_24h.msme_id == outflow_24h.msme_id)
           .select(
-              pw.this.msme_id,
-              pw.this.inflow_24h,
-              outflow_24h = pw.right.outflow_24h
+              msme_id = pw.coalesce(pw.this.msme_id, pw.right.msme_id),
+              inflow_24h = pw.coalesce(pw.this.inflow_24h, 0.0),
+              outflow_24h = pw.coalesce(pw.right.outflow_24h, 0.0)
           )
-          .join(fixed_out_7d, pw.this.msme_id == fixed_out_7d.msme_id)
+          .join_outer(fixed_out_7d, pw.this.msme_id == fixed_out_7d.msme_id)
           .select(
-              pw.this.msme_id,
-              pw.this.inflow_24h,
-              pw.this.outflow_24h,
-              fixed_out_7d = pw.right.fixed_out_7d
+              msme_id = pw.coalesce(pw.this.msme_id, pw.right.msme_id),
+              inflow_24h = pw.this.inflow_24h,
+              outflow_24h = pw.this.outflow_24h,
+              fixed_out_7d = pw.coalesce(pw.right.fixed_out_7d, 0.0)
           )
-          .join(inflow_7d_avg, pw.this.msme_id == inflow_7d_avg.msme_id)
+          .join_outer(inflow_7d_avg, pw.this.msme_id == inflow_7d_avg.msme_id)
           .select(
-              msme_id       = pw.this.msme_id,
-              inflow_24h    = pw.this.inflow_24h,
-              outflow_24h   = pw.this.outflow_24h,
-              fixed_out_7d  = pw.this.fixed_out_7d,
-              inflow_7d_avg = pw.right.inflow_7d_avg
+              msme_id = pw.coalesce(pw.this.msme_id, pw.right.msme_id),
+              inflow_24h = pw.coalesce(pw.this.inflow_24h, 0.0),
+              outflow_24h = pw.coalesce(pw.this.outflow_24h, 0.0),
+              fixed_out_7d = pw.coalesce(pw.this.fixed_out_7d, 0.0),
+              inflow_7d_avg = pw.coalesce(pw.right.inflow_7d_avg, 0.0)
           )
     )
 

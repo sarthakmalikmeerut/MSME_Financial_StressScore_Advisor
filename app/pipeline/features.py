@@ -2,56 +2,59 @@ from datetime import timedelta
 import pathway as pw
 
 def build_features(inflow, outflow, emi, balance):
-    inflow_24h = (
+    # Short windows (5 min) for testing/dev so they emit immediately
+    test_window = pw.temporal.sliding(duration=timedelta(minutes=5), hop=timedelta(minutes=1))
+
+    inflow_5m = (
         inflow.windowby(
             pw.this.ts,
-            window=pw.temporal.sliding(duration=timedelta(hours=24), hop=timedelta(minutes=5)),
+            window=test_window,
             instance=pw.this.msme_id
         ).reduce(msme_id=pw.reducers.any(pw.this.msme_id), inflow_24h=pw.reducers.sum(pw.this.amount))
     )
 
-    outflow_24h = (
+    outflow_5m = (
         outflow.windowby(
             pw.this.ts,
-            window=pw.temporal.sliding(duration=timedelta(hours=24), hop=timedelta(minutes=5)),
+            window=test_window,
             instance=pw.this.msme_id
         ).reduce(msme_id=pw.reducers.any(pw.this.msme_id), outflow_24h=pw.reducers.sum(pw.this.amount))
     )
 
-    fixed_out_7d = (
+    fixed_out_5m = (
         outflow.filter(pw.this.fixed_flag == 1)
         .windowby(
             pw.this.ts,
-            window=pw.temporal.sliding(duration=timedelta(days=7), hop=timedelta(hours=1)),
+            window=test_window,
             instance=pw.this.msme_id
         ).reduce(msme_id=pw.reducers.any(pw.this.msme_id), fixed_out_7d=pw.reducers.sum(pw.this.amount))
     )
 
-    inflow_7d_avg = (
+    inflow_5m_avg = (
         inflow.windowby(
             pw.this.ts,
-            window=pw.temporal.sliding(duration=timedelta(days=7), hop=timedelta(hours=1)),
+            window=test_window,
             instance=pw.this.msme_id
         ).reduce(msme_id=pw.reducers.any(pw.this.msme_id), inflow_7d_avg=pw.reducers.avg(pw.this.amount))
     )
 
-    # Join feature tables using outer join to catch MSMEs even if some data is missing
+    # Join results - Pathway joins windowed tables on both instance AND window alignment
     feats = (
-        inflow_24h
-          .join_outer(outflow_24h, inflow_24h.msme_id == outflow_24h.msme_id)
+        inflow_5m
+          .join_outer(outflow_5m, pw.this.msme_id == pw.right.msme_id)
           .select(
               msme_id = pw.coalesce(pw.this.msme_id, pw.right.msme_id),
               inflow_24h = pw.coalesce(pw.this.inflow_24h, 0.0),
               outflow_24h = pw.coalesce(pw.right.outflow_24h, 0.0)
           )
-          .join_outer(fixed_out_7d, pw.this.msme_id == fixed_out_7d.msme_id)
+          .join_outer(fixed_out_5m, pw.this.msme_id == pw.right.msme_id)
           .select(
               msme_id = pw.coalesce(pw.this.msme_id, pw.right.msme_id),
-              inflow_24h = pw.this.inflow_24h,
-              outflow_24h = pw.this.outflow_24h,
+              inflow_24h = pw.coalesce(pw.this.inflow_24h, 0.0),
+              outflow_24h = pw.coalesce(pw.this.outflow_24h, 0.0),
               fixed_out_7d = pw.coalesce(pw.right.fixed_out_7d, 0.0)
           )
-          .join_outer(inflow_7d_avg, pw.this.msme_id == inflow_7d_avg.msme_id)
+          .join_outer(inflow_5m_avg, pw.this.msme_id == pw.right.msme_id)
           .select(
               msme_id = pw.coalesce(pw.this.msme_id, pw.right.msme_id),
               inflow_24h = pw.coalesce(pw.this.inflow_24h, 0.0),
@@ -61,7 +64,7 @@ def build_features(inflow, outflow, emi, balance):
           )
     )
 
-    # Raw drivers
+    # Raw drivers - Now guaranteed to be non-nullable
     feats = feats.with_columns(
         expense_pressure = (pw.this.fixed_out_7d / (pw.this.inflow_7d_avg + 1e-6)),
         net_cf_24h       = pw.this.inflow_24h - pw.this.outflow_24h

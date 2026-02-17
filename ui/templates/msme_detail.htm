@@ -1,0 +1,168 @@
+{% extends "base.htm" %}
+
+{% block title %}{{ msme_id }} Details - MSME Stress Score Advisor{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="/scores" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left"></i> Back to Scores
+    </a>
+</div>
+
+<h1 class="mb-4">
+    <i class="fas fa-building"></i> {{ msme_id }}
+</h1>
+
+<!-- Main Score Card -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card border-{{ stress_level_color(stress_score) }} border-3">
+            <div class="card-body">
+                <h5 class="card-title text-muted">Overall Stress Score</h5>
+                <div class="display-4 mb-2">
+                    {{ "%.2f"|format(stress_score) }}
+                </div>
+                <span class="badge bg-{{ stress_level_color(stress_score) }} fs-5 mb-3">
+                    {{ stress_level_text(stress_score) }}
+                </span>
+                
+                <div class="progress mb-3" style="height: 30px;">
+                    <div class="progress-bar bg-{{ stress_level_color(stress_score) }}" 
+                         role="progressbar" 
+                         style="width: {{ stress_score * 100 }}%; font-weight: bold; font-size: 14px;">
+                        {{ (stress_score * 100)|int }}%
+                    </div>
+                </div>
+
+                <div class="alert alert-{{ stress_level_color(stress_score) }} mb-0">
+                    <strong>Status:</strong> This MSME is experiencing <strong>{{ stress_level_text(stress_score)|lower }}</strong> financial stress.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Summary</h5>
+                <dl class="row">
+                    <dt class="col-sm-6">MSME ID:</dt>
+                    <dd class="col-sm-6"><code>{{ msme_id }}</code></dd>
+
+                    <dt class="col-sm-6">Last Updated:</dt>
+                    <dd class="col-sm-6">
+                        <small class="text-muted">{{ timestamp }}</small>
+                    </dd>
+
+                    <dt class="col-sm-6">Risk Level:</dt>
+                    <dd class="col-sm-6">
+                        <span class="badge bg-{{ stress_level_color(stress_score) }}">
+                            {{ stress_level_text(stress_score) }}
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Metrics -->
+<div class="card">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-chart-pie"></i> Financial Metrics
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if data %}
+            <div class="row">
+                {% if data.inflow_balance is not none %}
+                    <div class="col-md-6 mb-4">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted">Inflow Balance</h6>
+                            <h3 class="text-success">
+                                <i class="fas fa-arrow-down"></i> ₹ {{ "{:,.2f}".format(data.inflow_balance) }}
+                            </h3>
+                            <small class="text-muted">Total cash inflows</small>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if data.outflow_balance is not none %}
+                    <div class="col-md-6 mb-4">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted">Outflow Balance</h6>
+                            <h3 class="text-danger">
+                                <i class="fas fa-arrow-up"></i> ₹ {{ "{:,.2f}".format(data.outflow_balance) }}
+                            </h3>
+                            <small class="text-muted">Total cash outflows</small>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if data.emi_balance is not none %}
+                    <div class="col-md-6 mb-4">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted">EMI Balance</h6>
+                            <h3 class="text-warning">
+                                <i class="fas fa-credit-card"></i> ₹ {{ "{:,.2f}".format(data.emi_balance) }}
+                            </h3>
+                            <small class="text-muted">Total loan obligations</small>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if data.net_balance is not none %}
+                    <div class="col-md-6 mb-4">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted">Net Balance</h6>
+                            <h3 class="{% if data.net_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                <i class="fas fa-wallet"></i> ₹ {{ "{:,.2f}".format(data.net_balance) }}
+                            </h3>
+                            <small class="text-muted">{% if data.net_balance >= 0 %}Surplus{% else %}Deficit{% endif %}</small>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <hr>
+
+            <h6 class="mt-4 mb-3">Other Metrics</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-borderless">
+                    <tbody>
+                        {% for key, value in data.items() %}
+                            {% if key not in ['stress_score', 'inflow_balance', 'outflow_balance', 'emi_balance', 'net_balance'] %}
+                                <tr>
+                                    <td><strong>{{ key|replace('_', ' ')|title }}</strong></td>
+                                    <td class="text-end">
+                                        {% if value is number %}
+                                            {{ "{:,.2f}".format(value) if value % 1 != 0 else value }}
+                                        {% else %}
+                                            {{ value }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation"></i> No detailed metrics available.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="mt-4">
+    <a href="/" class="btn btn-outline-primary">
+        <i class="fas fa-home"></i> Back to Dashboard
+    </a>
+    <a href="/alerts" class="btn btn-outline-danger">
+        <i class="fas fa-exclamation-circle"></i> View Alerts
+    </a>
+</div>
+{% endblock %}

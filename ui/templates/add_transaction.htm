@@ -1,0 +1,178 @@
+{% extends "base.htm" %}
+
+{% block title %}Add Transaction - MSME Stress Score Advisor{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">
+    <i class="fas fa-plus-circle"></i> Add New Transaction
+</h1>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Transaction Details</h5>
+            </div>
+            <div class="card-body">
+                <form id="transactionForm">
+                    <div class="mb-3">
+                        <label for="msmeId" class="form-label">MSME ID <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="msmeId" name="msme_id" 
+                               placeholder="e.g., A1, B2, C3" required>
+                        <small class="text-muted">Enter the MSME identifier</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount (₹) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="amount" name="amount" 
+                               placeholder="0.00" step="0.01" min="0" required>
+                        <small class="text-muted">Enter the transaction amount</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Transaction Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="type" name="type" required>
+                            <option value="inflow">Inflow (Revenue)</option>
+                            <option value="outflow">Outflow (Expense)</option>
+                            <option value="emi">EMI (Loan Payment)</option>
+                        </select>
+                        <small class="text-muted">Select the type of transaction</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="sales">Sales</option>
+                            <option value="expenses">Operating Expenses</option>
+                            <option value="salaries">Salaries</option>
+                            <option value="rent">Rent</option>
+                            <option value="utilities">Utilities</option>
+                            <option value="materials">Raw Materials</option>
+                            <option value="loan">Loan Disbursement</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <small class="text-muted">Select the category (optional)</small>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-check-circle"></i> Add Transaction
+                        </button>
+                        <a href="/" class="btn btn-outline-secondary btn-lg ms-2">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Response Alert -->
+        <div id="responseAlert" style="display: none;"></div>
+
+        <!-- Success Summary -->
+        <div id="successBox" style="display: none;">
+            <div class="card bg-success text-white mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-check-circle"></i> Success!
+                    </h5>
+                    <p id="successMessage" class="mb-0"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Box -->
+        <div class="card bg-info text-white">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> How It Works
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>When you add a transaction:</p>
+                <ol class="small mb-0">
+                    <li>The transaction is recorded in the system</li>
+                    <li>Real-time processing happens automatically</li>
+                    <li>Stress scores are recalculated (~1 second)</li>
+                    <li>Dashboard updates reflect the changes</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb"></i> Tips
+                </h5>
+            </div>
+            <div class="card-body small">
+                <p><strong>MSME IDs:</strong> Use uppercase letters followed by numbers (e.g., A1, B2)</p>
+                <p><strong>Amount:</strong> Enter positive numbers only</p>
+                <p><strong>Type:</strong> Choose inflow for revenues, outflow for expenses</p>
+                <p><strong>Real-time:</strong> Changes are reflected immediately in the pipeline</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('transactionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        msme_id: document.getElementById('msmeId').value.trim(),
+        amount: parseFloat(document.getElementById('amount').value),
+        type: document.getElementById('type').value,
+        category: document.getElementById('category').value
+    };
+
+    const alertBox = document.getElementById('responseAlert');
+    const formElement = document.getElementById('transactionForm');
+    
+    try {
+        const response = await fetch('/add-transaction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Show success message
+            document.getElementById('successMessage').innerHTML = 
+                `Transaction added for <strong>${formData.msme_id}</strong>: ₹${formData.amount.toLocaleString('en-IN')}`;
+            document.getElementById('successBox').style.display = 'block';
+            
+            // Reset form
+            formElement.reset();
+            
+            // Hide alert after 3 seconds
+            setTimeout(() => {
+                document.getElementById('successBox').style.display = 'none';
+                window.location.href = '/';
+            }, 3000);
+        } else {
+            alertBox.innerHTML = `<div class="alert alert-warning alert-dismissible fade show">
+                <i class="fas fa-exclamation"></i> ${data.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            alertBox.style.display = 'block';
+        }
+    } catch (error) {
+        alertBox.innerHTML = `<div class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-times-circle"></i> Error: ${error.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>`;
+        alertBox.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

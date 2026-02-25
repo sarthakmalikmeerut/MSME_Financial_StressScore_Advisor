@@ -2,6 +2,13 @@
 .venv
 
 
+
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+
 app/__pycache__
 app/pipeline/__pycache__
 app/data/__pycache__

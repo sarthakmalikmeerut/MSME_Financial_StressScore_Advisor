@@ -1,0 +1,9 @@
+msme_id,timestamp,amount,type,category
+MSME001,2026-02-14 08:00:00,50000,inflow,sales
+MSME001,2026-02-14 09:00:00,-12000,outflow,rent
+MSME001,2026-02-14 10:00:00,-8000,outflow,salary
+MSME001,2026-02-14 11:00:00,15000,inflow,sales
+MSME002,2026-02-14 08:30:00,30000,inflow,sales
+MSME002,2026-02-14 09:30:00,-25000,outflow,inventory
+MSME002,2026-02-14 10:30:00,-9000,outflow,rent
+MSME002,2026-02-14 11:30:00,5000,inflow,sales

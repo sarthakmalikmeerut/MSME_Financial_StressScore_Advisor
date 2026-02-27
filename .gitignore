@@ -1,6 +1,6 @@
 .gitignore
 .venv
-
+.env
 
 app/__pycache__
 app/pipeline/__pycache__
@@ -14,3 +14,4 @@ app/pipeline/__pycache__
 app/__pycache__
 
 stdout
+faiss_index_store
